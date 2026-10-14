@@ -108,12 +108,13 @@ jobs:
               );
 
               await github.rest.repos.createCommitStatus({
-                owner,
-                repo,
+                owner: owner,
+                repo: repo,
                 sha: statusSha,
-                state,
+                state: state,
                 context: statusContext,
-                description,
+                target_url: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+                description: description,
               });
             }
 
