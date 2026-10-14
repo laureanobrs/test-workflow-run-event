@@ -80,9 +80,9 @@ jobs:
             const testConfig = JSON.parse(process.env.TEST_CONFIG);
 
             if (testConfig.force_sleep){
-              setTimeout(() => {
-                console.log("30 seconds have passed!");
-              }, 30000);
+              const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+              console.log("Sleeping 30 seconds");
+              await sleep(30000)
             }
 
             const { owner, repo } = context.repo;
