@@ -79,12 +79,6 @@ jobs:
             // DO_NOT_SUBMIT
             const testConfig = JSON.parse(process.env.TEST_CONFIG);
 
-            if (testConfig.force_sleep){
-              const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-              console.log("Sleeping 30 seconds");
-              await sleep(30000)
-            }
-
             const { owner, repo } = context.repo;
             const pullNumber =
               Number('${{ needs.resolve-pr.outputs.pull-number }}');
@@ -139,6 +133,12 @@ jobs:
                 'pending',
                 'Checking cross-company review policy.'
               );
+
+              if (testConfig.force_sleep){
+                const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                console.log("Sleeping 30 seconds");
+                await sleep(30000)
+              }
 
               // ------------------------------------------------------------
               // Parse team configuration
