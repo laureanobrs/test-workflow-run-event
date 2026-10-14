@@ -68,12 +68,23 @@ jobs:
 
     env:
       CROSS_COMPANY_TEAMS: ${{ vars.CROSS_COMPANY_TEAMS }}
+      # DO_NOT_SUBMIT
+      TEST_CONFIG: ${{ vars.TEST_CONFIG }}
 
     steps:
       - name: Check cross-company review policy
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
+            // DO_NOT_SUBMIT
+            const testConfig = JSON.parse(process.env.TEST_CONFIG);
+
+            if (testConfig.force_sleep){
+              setTimeout(() => {
+                console.log("30 seconds have passed!");
+              }, 30000);
+            }
+
             const { owner, repo } = context.repo;
             const pullNumber =
               Number('${{ needs.resolve-pr.outputs.pull-number }}');
@@ -119,6 +130,9 @@ jobs:
             }
 
             try {
+              if (testConfig.fail_with_exception){
+                throw new Error("Forced failure from test config");
+              }
               // Invalidate any previous successful policy result while
               // checking the current PR state.
               await setPolicyStatus(
@@ -285,7 +299,7 @@ jobs:
               // Publish policy result
               // ------------------------------------------------------------
 
-              if (crossCompanyApprovers.length === 0) {
+              if (crossCompanyApprovers.length === 0 and testConfig.fail_approval) {
                 await setPolicyStatus(
                   'failure',
                   'Cross-company approval is still required.'
