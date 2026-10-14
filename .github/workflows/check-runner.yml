@@ -299,7 +299,7 @@ jobs:
               // Publish policy result
               // ------------------------------------------------------------
 
-              if (crossCompanyApprovers.length === 0 and testConfig.fail_approval) {
+              if (crossCompanyApprovers.length === 0 && testConfig.fail_approval) {
                 await setPolicyStatus(
                   'failure',
                   'Cross-company approval is still required.'
