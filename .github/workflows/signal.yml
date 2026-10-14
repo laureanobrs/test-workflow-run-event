@@ -1,0 +1,19 @@
+name: Cross-company review signal
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+# This workflow needs no privileges. It is just a trigger for check-cross-company-review-policy.yml
+permissions: {}
+
+jobs:
+  cross-company-review-signal:
+    name: Cross-company review signal
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Signal cross-company review policy check
+        run: |
+          echo "Event: ${{ github.event_name }}"
