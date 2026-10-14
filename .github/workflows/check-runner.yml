@@ -113,7 +113,7 @@ jobs:
                 sha: statusSha,
                 state: state,
                 context: statusContext,
-                target_url: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+                target_url: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
                 description: description,
               });
             }
