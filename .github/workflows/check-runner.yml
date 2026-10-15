@@ -17,7 +17,7 @@ name: Check cross-company review policy
 on:
   workflow_run:
     workflows:
-      - Cross-company review signal
+      - Signal cross-company review check
     types:
       - completed
 
@@ -39,33 +39,23 @@ jobs:
           script: |
             const workflowRun = context.payload.workflow_run;
             const pullNumber = workflowRun.pull_requests?.[0]?.number;
-
             if (!pullNumber) {
-              throw new Error(
-                'No PR found in workflow_run.pull_requests'
-              );
+              throw new Error('No PR found in workflow_run.pull_requests');
             }
-
-            console.log(
-              `PR #${pullNumber} found in workflow_run.pull_requests`
-            );
-
+            console.log(`PR #${pullNumber} found in workflow_run.pull_requests`);
             core.setOutput('pull-number', pullNumber);
 
   cross-company-review-policy:
     name: Check cross-company review policy
     needs: resolve-pr
     runs-on: ubuntu-24.04
-
     concurrency:
       group: cross-company-review-pr-${{ needs.resolve-pr.outputs.pull-number }}
       cancel-in-progress: true
-
     permissions:
       contents: read
       pull-requests: read
       statuses: write
-
     env:
       CROSS_COMPANY_TEAMS: ${{ vars.CROSS_COMPANY_TEAMS }}
       # DO_NOT_SUBMIT
@@ -80,24 +70,18 @@ jobs:
             const testConfig = JSON.parse(process.env.TEST_CONFIG);
 
             const { owner, repo } = context.repo;
-            const pullNumber =
-              Number('${{ needs.resolve-pr.outputs.pull-number }}');
+            const pullNumber = Number('${{ needs.resolve-pr.outputs.pull-number }}');
 
             // ------------------------------------------------------------
             // Fetch PR
             // ------------------------------------------------------------
-
             const { data: pullRequest } =
               await github.rest.pulls.get({
                 owner,
                 repo,
                 pull_number: pullNumber,
               });
-
             const pullAuthor = pullRequest.user.login;
-
-            const statusContext = 'cross-company/approval';
-
             const statusSha = pullRequest.head.sha;
 
             console.log(`PR: #${pullNumber}`);
@@ -106,6 +90,7 @@ jobs:
             console.log(`Status SHA: ${statusSha}`);
 
             async function setPolicyStatus(state, description) {
+              const statusContext = 'Cross-company/approval';
               console.log(
                 `${statusContext}: ${state} - ${description}`
               );
@@ -144,60 +129,41 @@ jobs:
 
               const teamMembers = new Map(
                 JSON.parse(process.env.CROSS_COMPANY_TEAMS)
-                  .map(({ name, members }) => [
-                    name,
-                    new Set(members),
-                  ])
-              );
-
+                  .map(({ name, members }) => [name, new Set(members)]));
               const teams = [...teamMembers.keys()];
-
               console.log('Team members:', teamMembers);
 
               function getUserTeam(username) {
                 const userTeams = teams.filter(
                   team => teamMembers.get(team).has(username)
                 );
-
                 if (userTeams.length > 1) {
                   throw new Error(
-                    `User ${username} belongs to multiple configured teams: ` +
-                    `${userTeams.join(', ')}`
+                    `User ${username} belongs to multiple configured teams: ${userTeams.join(', ')}`
                   );
                 }
-
                 return userTeams[0] ?? null;
               }
 
               function getAuthorTeam(username) {
                 const userTeam = getUserTeam(username);
-
                 if (userTeam === null) {
                   throw new Error(
-                    `User ${username} does not belong to any of the configured ` +
-                    `teams: ${teams.join(', ')}`
+                    `User ${username} does not belong to any of the configured teams: ${teams.join(', ')}`
                   );
                 }
-
                 return userTeam;
               }
 
               function computeApproverTeamMap(approvers) {
                 const approverToTeam = new Map();
-
                 for (const approver of approvers) {
                   const team = getUserTeam(approver);
-
                   if (team !== null) {
                     approverToTeam.set(approver, team);
                   }
                 }
-
-                console.log(
-                  'Approver to team:',
-                  approverToTeam
-                );
-
+                console.log('Approver to team:',approverToTeam);
                 return approverToTeam;
               }
 
@@ -221,19 +187,14 @@ jobs:
               // ------------------------------------------------------------
 
               const reviewStates = new Map();
-
               for (const review of reviews) {
                 const username = review.user.login;
-
                 if (
                   review.state === 'APPROVED' ||
                   review.state === 'CHANGES_REQUESTED' ||
                   review.state === 'DISMISSED'
                 ) {
-                  reviewStates.set(
-                    username,
-                    review.state
-                  );
+                  reviewStates.set(username, review.state);
                 }
               }
 
@@ -244,42 +205,22 @@ jobs:
               const prApprovers = new Set(
                 [...reviewStates.entries()]
                   .filter(
-                    ([username, state]) =>
-                      username !== pullAuthor &&
-                      state === 'APPROVED'
-                  )
+                    ([username, state]) => username !== pullAuthor && state === 'APPROVED')
                   .map(([username]) => username)
               );
-
               console.log(
-                `Effective approvers for PR ${pullNumber} ` +
-                `authored by ${pullAuthor}: ` +
-                `${[...prApprovers].join(', ')}`
+                `Effective approvers for PR ${pullNumber} authored by ${pullAuthor}: ${[...prApprovers].join(', ')}`
               );
 
               // ------------------------------------------------------------
               // Calculate author and approver teams
               // ------------------------------------------------------------
 
-              const authorTeam =
-                getAuthorTeam(pullAuthor);
-
-              const approverToTeam =
-                computeApproverTeamMap(prApprovers);
-
-              const crossCompanyTeams =
-                teams.filter(
-                  team => team !== authorTeam
-                );
-
-              console.log(
-                `Author team: ${pullAuthor} - ${authorTeam}`
-              );
-
-              console.log(
-                `Candidate cross-company teams: ` +
-                `${crossCompanyTeams.join(', ')}`
-              );
+              const authorTeam = getAuthorTeam(pullAuthor);
+              const approverToTeam = computeApproverTeamMap(prApprovers);
+              const crossCompanyTeams = teams.filter(team => team !== authorTeam);
+              console.log(`Author team: ${pullAuthor} - ${authorTeam}`);
+              console.log(`Candidate cross-company teams: ${crossCompanyTeams.join(', ')}`);
 
               // ------------------------------------------------------------
               // Find cross-company approvers
@@ -287,10 +228,7 @@ jobs:
 
               const crossCompanyApprovers =
                 [...approverToTeam.entries()]
-                  .filter(
-                    ([_, team]) =>
-                      crossCompanyTeams.includes(team)
-                  )
+                  .filter(([_, team]) => crossCompanyTeams.includes(team))
                   .map(([approver]) => approver);
 
               // ------------------------------------------------------------
@@ -298,11 +236,7 @@ jobs:
               // ------------------------------------------------------------
 
               if (crossCompanyApprovers.length === 0 && testConfig.fail_approval) {
-                await setPolicyStatus(
-                  'failure',
-                  'Cross-company approval is still required.'
-                );
-
+                await setPolicyStatus('failure', 'Cross-company approval is still required.');
                 core.setFailed(
                   `Cross-company review policy not met: ` +
                   `PR author ${pullAuthor} belongs to team '${authorTeam}', ` +
@@ -310,53 +244,26 @@ jobs:
                   `belonging to teams from other companies: ` +
                   `${crossCompanyTeams.join(', ')}.`
                 );
-
                 return;
               }
 
-              await setPolicyStatus(
-                'success',
-                'Cross-company approval requirement satisfied.'
-              );
+              await setPolicyStatus('success', 'Cross-company approval requirement satisfied.');
 
-              core.summary.addHeading(
-                'Cross-company review policy satisfied.',
-                '3'
-              );
+              core.summary.addHeading('Cross-company review policy satisfied.', '3');
               core.summary.addEOL();
-              core.summary.addRaw(
-                'Cross-company approver(s):'
-              );
-              core.summary.addList(
-                crossCompanyApprovers
-              );
-
-              console.log(
-                core.summary.stringify()
-              );
-
+              core.summary.addRaw('Cross-company approver(s):');
+              core.summary.addList(crossCompanyApprovers);
+              console.log(core.summary.stringify());
               core.summary.write();
-
             } catch (error) {
-              core.error(
-                `Unable to check cross-company review policy: ` +
-                `${error.message}`
-              );
+              core.error(`Unable to check cross-company review policy: ${error.message}`);
 
-              // Don't leave a stale "pending" status if the checker
-              // itself fails unexpectedly.
+              // Don't leave a stale "pending" status if the checker itself fails unexpectedly.
               try {
-                await setPolicyStatus(
-                  'error',
-                  'Unable to check cross-company review policy.'
-                );
+                await setPolicyStatus('error', 'Unable to check cross-company review policy.');
               } catch (statusError) {
-                core.error(
-                  `Unable to publish error status: ` +
-                  `${statusError.message}`
-                );
+                core.error(`Unable to publish error status: ${statusError.message}`);
               }
-
               throw error;
             }
 
@@ -366,9 +273,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "GitHub API rate limit:"
-          gh api rate_limit \
-            --jq '
-              .resources
-              | to_entries[]
-              | "\(.key): remaining=\(.value.remaining)/\(.value.limit), used=\(.value.used), reset=\(.value.reset)"
-            '
+          gh api rate_limit
