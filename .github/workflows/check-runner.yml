@@ -60,7 +60,6 @@ jobs:
       CROSS_COMPANY_TEAMS: ${{ vars.CROSS_COMPANY_TEAMS }}
       # DO_NOT_SUBMIT
       TEST_CONFIG: ${{ vars.TEST_CONFIG }}
-
     steps:
       - name: Check cross-company review policy
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -91,10 +90,7 @@ jobs:
 
             async function setPolicyStatus(state, description) {
               const statusContext = 'Cross-company/approval';
-              console.log(
-                `${statusContext}: ${state} - ${description}`
-              );
-
+              console.log(`${statusContext}: ${state} - ${description}`);
               await github.rest.repos.createCommitStatus({
                 owner: owner,
                 repo: repo,
@@ -133,6 +129,31 @@ jobs:
               const teams = [...teamMembers.keys()];
               console.log('Team members:', teamMembers);
 
+              function computeApproverTeamMap(approvers) {
+                const approverToTeam = new Map();
+                for (const approver of approvers) {
+                  const team = getUserTeam(approver);
+                  if (team !== null) {
+                    approverToTeam.set(approver, team);
+                  }
+                }
+                console.log('Approver to team:',approverToTeam);
+                return approverToTeam;
+              }
+
+              function fetchReviews(pullNumber){
+                // GitHub returns the reviews in chronological order.
+                return await github.paginate(
+                  github.rest.pulls.listReviews,
+                  {
+                    owner,
+                    repo,
+                    pull_number: pullNumber,
+                    per_page: 100,
+                  }
+                );
+              }
+
               function getUserTeam(username) {
                 const userTeams = teams.filter(
                   team => teamMembers.get(team).has(username)
@@ -155,48 +176,23 @@ jobs:
                 return userTeam;
               }
 
-              function computeApproverTeamMap(approvers) {
-                const approverToTeam = new Map();
-                for (const approver of approvers) {
-                  const team = getUserTeam(approver);
-                  if (team !== null) {
-                    approverToTeam.set(approver, team);
+              function calculateEffectiveReviewStateMap(reviews){
+                const reviewStates = new Map();
+                for (const review of reviews) {
+                  const username = review.user.login;
+                  if (
+                    review.state === 'APPROVED' ||
+                    review.state === 'CHANGES_REQUESTED' ||
+                    review.state === 'DISMISSED'
+                  ) {
+                    reviewStates.set(username, review.state);
                   }
                 }
-                console.log('Approver to team:',approverToTeam);
-                return approverToTeam;
+                return reviewStates;
               }
 
-              // ------------------------------------------------------------
-              // Fetch reviews
-              // ------------------------------------------------------------
-
-              // GitHub returns the reviews in chronological order.
-              const reviews = await github.paginate(
-                github.rest.pulls.listReviews,
-                {
-                  owner,
-                  repo,
-                  pull_number: pullNumber,
-                  per_page: 100,
-                }
-              );
-
-              // ------------------------------------------------------------
-              // Calculate effective state for every reviewer
-              // ------------------------------------------------------------
-
-              const reviewStates = new Map();
-              for (const review of reviews) {
-                const username = review.user.login;
-                if (
-                  review.state === 'APPROVED' ||
-                  review.state === 'CHANGES_REQUESTED' ||
-                  review.state === 'DISMISSED'
-                ) {
-                  reviewStates.set(username, review.state);
-                }
-              }
+              const reviews = fetchReviews(pullNumber);
+              const reviewStates = calculateEffectiveReviewStateMap(reviews);
 
               // ------------------------------------------------------------
               // Get effective approvers, excluding PR author
@@ -257,8 +253,6 @@ jobs:
               core.summary.write();
             } catch (error) {
               core.error(`Unable to check cross-company review policy: ${error.message}`);
-
-              // Don't leave a stale "pending" status if the checker itself fails unexpectedly.
               try {
                 await setPolicyStatus('error', 'Unable to check cross-company review policy.');
               } catch (statusError) {
