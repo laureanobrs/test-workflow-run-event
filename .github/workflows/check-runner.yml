@@ -98,9 +98,7 @@ jobs:
 
             const statusContext = 'cross-company/approval';
 
-            const statusSha =
-              pullRequest.merge_commit_sha ??
-              pullRequest.head.sha;
+            const statusSha = pullRequest.head.sha;
 
             console.log(`PR: #${pullNumber}`);
             console.log(`Author: ${pullAuthor}`);
