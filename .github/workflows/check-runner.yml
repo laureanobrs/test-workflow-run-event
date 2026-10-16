@@ -241,7 +241,7 @@ jobs:
               }
             }
 
-            await main();
+            main();
 
 
       - name: Print GitHub API rate limit
@@ -250,4 +250,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "GitHub API rate limit:"
-          gh api rate_limit
+          gh api rate_limit | jq .
