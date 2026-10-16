@@ -6,12 +6,15 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
 
-# This workflow needs no permissions. It is just a trigger for check-cross-company-review-policy.yml
-permissions: {}
+
+permissions:
+  contents: read
 
 jobs:
   signal-cross-company-check:
     runs-on: ubuntu-24.04
+    permissions:
+      statuses: write
     steps:
       - name: Set cross-company review status to pending
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
