@@ -27,6 +27,11 @@ on:
         required: true
         type: number
 
+run-name: >-
+  Check cross-company review policy -
+  ${{ github.event.workflow_run.head_branch }}
+  @ ${{ github.event.workflow_run.head_sha }}
+
 permissions:
   contents: read
 
