@@ -20,6 +20,12 @@ on:
       - Signal cross-company review check
     types:
       - completed
+  workflow_dispatch:
+    inputs:
+      pull_number:
+        description: PR number to check
+        required: true
+        type: number
 
 permissions:
   contents: read
