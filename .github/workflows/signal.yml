@@ -11,9 +11,23 @@ permissions: {}
 
 jobs:
   signal-cross-company-check:
-    name: Signal cross-company review check
     runs-on: ubuntu-24.04
     steps:
-      - name: Signal cross-company review check
-        run: |
-          echo "Event: ${{ github.event_name }}"
+      - name: Set cross-company review status to pending
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pullRequest = context.payload.pull_request;
+            const statusSha = pullRequest.head.sha;
+            # DO_NOT_SUBMIT: repo var
+            const statusContext = 'Cross-company/approval';
+            github.rest.repos.createCommitStatus({
+              owner,
+              repo,
+              sha: statusSha,
+              state: 'pending',
+              context: statusContext,
+              description: 'Waiting for cross-company review policy check.',
+            });
+            console.log(`${statusContext}: pending on ${statusSha}`);
