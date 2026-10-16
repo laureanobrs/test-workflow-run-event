@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       statuses: write
+    env:
+      STATUS_CONTEXT: ${{ vars.CROSS_COMPANY_CHECK_NAME }}    
     steps:
       - name: Set cross-company review status to pending
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -23,8 +25,7 @@ jobs:
             const { owner, repo } = context.repo;
             const pullRequest = context.payload.pull_request;
             const statusSha = pullRequest.head.sha;
-            // DO_NOT_SUBMIT: repo var
-            const statusContext = 'Cross-company/approval';
+            const statusContext = process.env.STATUS_CONTEXT;
             github.rest.repos.createCommitStatus({
               owner,
               repo,
