@@ -23,7 +23,7 @@ jobs:
             const { owner, repo } = context.repo;
             const pullRequest = context.payload.pull_request;
             const statusSha = pullRequest.head.sha;
-            # DO_NOT_SUBMIT: repo var
+            // DO_NOT_SUBMIT: repo var
             const statusContext = 'Cross-company/approval';
             github.rest.repos.createCommitStatus({
               owner,
