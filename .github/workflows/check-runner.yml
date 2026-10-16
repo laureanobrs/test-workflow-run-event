@@ -36,12 +36,18 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const workflowRun = context.payload.workflow_run;
-            const pullNumber = workflowRun.pull_requests?.[0]?.number;
-            if (!pullNumber) {
-              throw new Error('No PR found in workflow_run.pull_requests');
+            let pullNumber;
+            if (context.eventName === 'workflow_dispatch'){
+              pullNumber = Number(context.payload.inputs.pull_number);
+              console.log(`PR ${pullNumber} provided by workflow_dispatch`);            
+            } else if (context.eventName === 'workflow_run') {
+              const workflowRun = context.payload.workflow_run;
+              const pullNumber = workflowRun.pull_requests?.[0]?.number;
+              if (!pullNumber) {
+                throw new Error('No PR found in workflow_run.pull_requests');
+              }
+              console.log(`PR #${pullNumber} found in workflow_run.pull_requests`);
             }
-            console.log(`PR #${pullNumber} found in workflow_run.pull_requests`);
             core.setOutput('pull-number', pullNumber);
 
   cross-company-review-policy:
