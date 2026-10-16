@@ -83,6 +83,7 @@ jobs:
       statuses: write
     env:
       CROSS_COMPANY_TEAMS: ${{ vars.CROSS_COMPANY_TEAMS }}
+      STATUS_CONTEXT: ${{ vars.CROSS_COMPANY_CHECK_NAME }}
       # DO_NOT_SUBMIT
       TEST_CONFIG: ${{ vars.TEST_CONFIG }}
     steps:
@@ -91,8 +92,7 @@ jobs:
         with:
           script: |
             async function setPolicyStatus(statusSha, state, description) {
-              // DO_NOT_SUBMIT: repo var
-              const statusContext = 'Cross-company/approval';
+              const statusContext = process.env.STATUS_CONTEXT;
               const { owner, repo } = context.repo;
               console.log(`${statusContext}: ${state} - ${description}`);
               await github.rest.repos.createCommitStatus({
