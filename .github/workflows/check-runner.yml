@@ -70,6 +70,7 @@ jobs:
             core.setOutput('pull-number', pullNumber);
 
   cross-company-review-policy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     name: Check cross-company review policy
     needs: resolve-pr
     runs-on: ubuntu-24.04
