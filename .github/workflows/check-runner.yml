@@ -53,7 +53,7 @@ jobs:
               console.log(`PR ${pullNumber} provided by workflow_dispatch`);            
             } else if (context.eventName === 'workflow_run') {
               const workflowRun = context.payload.workflow_run;
-              const pullNumber = workflowRun.pull_requests?.[0]?.number;
+              pullNumber = workflowRun.pull_requests?.[0]?.number;
               if (!pullNumber) {
                 throw new Error('No PR found in workflow_run.pull_requests');
               }
