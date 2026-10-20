@@ -187,7 +187,7 @@ jobs:
 
             async function setPolicyStatusToFailure(statusSha, pullAuthor, authorTeam, crossCompanyTeams){
               await setPolicyStatus(statusSha, 'failure', 'Cross-company approval is still required.');
-              core.info(
+              core.notice(
                 `Cross-company review policy not met: ` +
                 `PR author ${pullAuthor} belongs to team '${authorTeam}', ` +
                 `and the PR has not been approved by any reviewers ` +
