@@ -67,6 +67,7 @@ jobs:
               }
               console.log(`PR #${pullNumber} found in workflow_run.pull_requests`);
             }
+            core.notice(`Triggered for pull-request: ${context.serverUrl}/${owner}/${repo}/pull/${pullNumber}`);
             core.setOutput('pull-number', pullNumber);
 
   cross-company-review-policy:
