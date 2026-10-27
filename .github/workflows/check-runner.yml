@@ -66,8 +66,22 @@ jobs:
               const workflowRun = context.payload.workflow_run;
               pullNumber = workflowRun.pull_requests?.[0]?.number;
               if (!pullNumber) {
-                throw new Error('No PR found in workflow_run.pull_requests');
-              }
+                const { data: prs } =
+                  await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                    ...context.repo,
+                    commit_sha: workflowRun.head_sha,
+                  });
+                const matches = prs.filter(
+                  pr => pr.head.sha === workflowRun.head_sha &&
+                        pr.head.ref === workflowRun.head_branch
+                );
+                if (matches.length !== 1) {
+                  throw new Error(
+                    `Expected one PR for ${workflowRun.head_sha}, found ${matches.length}`
+                  );
+                }
+                pullNumber = matches[0].number;
+              }              
               console.log(`PR #${pullNumber} found in workflow_run.pull_requests`);
             }
             core.notice(`Triggered for pull-request: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/pull/${pullNumber}`);
