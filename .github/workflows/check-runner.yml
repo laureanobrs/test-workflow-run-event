@@ -43,12 +43,15 @@ jobs:
       pull-number: ${{ steps.resolve.outputs.pull-number }}
     steps:
       - name: Debug info
+        env:
+          WORKFLOW_RUN: ${{ toJSON(github.event.workflow_run) }}
         run: |
           echo "event_name=${{ github.event_name }}"
           echo "ref=${{ github.ref }}"
           echo "sha=${{ github.sha }}"
           echo "head_branch=${{ github.event.workflow_run.head_branch }}"
           echo "head_sha=${{ github.event.workflow_run.head_sha }}"
+          echo "$WORKFLOW_RUN" | jq .
 
       - name: Resolve PR number
         id: resolve
