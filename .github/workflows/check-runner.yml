@@ -39,6 +39,8 @@ jobs:
   resolve-pr:
     name: Resolve which PR triggered the signal workflow
     runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read    
     outputs:
       pull-number: ${{ steps.resolve.outputs.pull-number }}
     steps:
